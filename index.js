@@ -41,7 +41,6 @@ const updateBatch = body => {
 	)
 }
 const { data } = await getData()
-console.log(data)
 let body = []
 data.system.userRequests.forEach(async (info, index, arr) => {
 	let account = {}
