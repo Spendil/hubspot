@@ -19,7 +19,7 @@ const getData = async () => {
 			"content-type": "application/json",
 			"x-api-key": process.env.X_API_KEY,
 		},
-		"body": `{\"query\":\"query ($days30: ISO8601DateTime, $days7: ISO8601DateTime) {\\n\\t\\t\\tsystem {\\n\\t\\t\\t  userRequests(email: {notIn: [\\\"-\\\", \\\"admin\\\", \\\"ide\\\", \\\"explorer\\\"]}) {\\n\\t\\t\\t\\taccount {\\n\\t\\t\\t\\t  email\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tlast30days: countBigInt(date: {after: $days30})\\n\\t\\t\\t\\tlast7days: countBigInt(date: {after: $days7})\\n\\t\\t\\t\\tlastAPIcall: maximum(of: date get: date)\\n\\t\\t\\t  }\\n\\t\\t\\t}\\n\\t\\t}\",\"variables\":\"{\\n  \\\"days30\\\": \\\"${new Date( new Date().setDate( new Date().getDate() - 30 ) ).toISOString()}\\\",\\n  \\\"days7\\\": \\\"${new Date( new Date().setDate( new Date().getDate() - 7 ) ).toISOString()}\\\"\\n}\"}`,
+		"body": `{\"query\":\"query ($days30: ISO8601DateTime, $days7: ISO8601DateTime) {\\n\\t\\t\\tsystem {\\n\\t\\t\\t  userRequests {\\n\\t\\t\\t\\taccount {\\n\\t\\t\\t\\t  email\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tlast30days: countBigInt(date: {after: $days30})\\n\\t\\t\\t\\tlast7days: countBigInt(date: {after: $days7})\\n\\t\\t\\t\\tlastAPIcall: maximum(of: date get: date)\\n\\t\\t\\t  }\\n\\t\\t\\t}\\n\\t\\t}\",\"variables\":\"{\\n  \\\"days30\\\": \\\"${new Date( new Date().setDate( new Date().getDate() - 30 ) ).toISOString()}\\\",\\n  \\\"days7\\\": \\\"${new Date( new Date().setDate( new Date().getDate() - 7 ) ).toISOString()}\\\"\\n}\"}`,
 		"method": "POST",
 		"credentials": "same-origin"
 	})
@@ -42,7 +42,9 @@ const updateBatch = body => {
 }
 const { data } = await getData()
 let body = []
-data.system.userRequests.forEach(async (info, index, arr) => {
+data.system.userRequests
+.filter(item => item.account.email !== '-' && item.account.email !== 'ide' && item.account.email !== 'admin' && item.account.email !== 'explorer')
+.forEach(async (info, index, arr) => {
 	let account = {}
 	account.email = info.account.email
 	account.properties = [
@@ -63,6 +65,7 @@ data.system.userRequests.forEach(async (info, index, arr) => {
 			value: false
 		}
 	]
+	body.push(account)
 	if (body.length && index%100 === 0) {
 		const response = await updateBatch(body)
 		console.log(response.status);
@@ -98,4 +101,3 @@ connection.query(
 			.catch(error => console.log(error))
 })
 connection.end()
-
